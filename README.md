@@ -1,6 +1,6 @@
 # SSR Blog Kit
 
-<video src="./doc/blog.mp4" controls width="100%"></video>
+[▶ Assistir à demonstração do blog](./doc/blog.mp4)
 
 Editorial SSR blog starter: public HTML blog + shadcn/ui admin CMS.
 
