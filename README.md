@@ -1,6 +1,6 @@
 # SSR Blog Kit
 
-[▶ Assistir à demonstração do blog](./doc/blog.mp4)
+[▶ Assistir à demonstração do blog](https://github.com/luizfilipeschaeffer/blog/raw/master/doc/blog.mp4)
 
 Editorial SSR blog starter: public HTML blog + shadcn/ui admin CMS.
 
