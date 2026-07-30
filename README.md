@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# SSR Blog Kit
 
-## Getting Started
+Editorial SSR blog starter: public HTML blog + shadcn/ui admin CMS.
 
-First, run the development server:
+Built with **Next.js 16**, **PostgreSQL** (Docker), **Prisma 7**, **marked**, and **lucide-react**.
+
+## Features
+
+- Public SSR pages (`/blog`, `/blog/:slug`) with monochrome design
+- Theme switch (light / system / dark), GradualBlur, reading progress
+- Featured carousel, responsive post grid, category nav in the header
+- TOC, share tools, authors, scheduled posts, preview mode
+- RSS, JSON Feed, sitemap, robots, Open Graph, JSON-LD
+- Admin CMS: posts, categories, templates, settings, **multi-user auth**
+- Password reset via **Resend**
+
+## Prerequisites
+
+- Node.js 20+
+- Docker + Docker Compose
+- npm
+- (Optional) [Resend](https://resend.com) API key for password-reset e-mails
+
+## Quick start
 
 ```bash
+cp .env.example .env
+npm install
+npm run setup
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open:
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+- Blog: http://localhost:3000/blog
+- Admin: http://localhost:3000/admin/login
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Default bootstrap admin (first seed only):
 
-## Learn More
+- E-mail: `admin@example.com`
+- Password: `changeme`
 
-To learn more about Next.js, take a look at the following resources:
+Change these before any real deploy.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Environment
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+| Variable | Purpose |
+|----------|---------|
+| `DATABASE_URL` | Postgres connection string |
+| `PUBLIC_URL` | Absolute site URL for canonical/OG/feeds/reset links |
+| `ADMIN_EMAIL` | Bootstrap admin e-mail (created when `users` is empty) |
+| `ADMIN_PASSWORD` | Bootstrap admin password |
+| `ADMIN_SESSION_SECRET` | HMAC secret for the session cookie |
+| `RESEND_API_KEY` | Resend API key (required in production for reset e-mails) |
+| `EMAIL_FROM` | From address, e.g. `SSR Blog Kit <onboarding@resend.dev>` |
 
-## Deploy on Vercel
+### Auth model
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+- Users live in Postgres (`users`) with roles `admin` | `editor`
+- Login uses **e-mail + password** (bcrypt)
+- Session cookie is signed with `ADMIN_SESSION_SECRET`
+- Only **admins** can create/manage users under Admin → Usuários
+- Editors can manage content but not users
+- Blog authors (`BlogAuthor`) stay separate from login accounts
+- Forgot-password never reveals whether an e-mail exists
+- Without `RESEND_API_KEY` in development, reset links are logged to the server console
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+In production, set strong `ADMIN_SESSION_SECRET`, `RESEND_API_KEY`, and `EMAIL_FROM`.
+
+Docker credentials (`blog` / `blog`, database `ssr_blog`) are for local development only.
+
+## Scripts
+
+```bash
+npm run setup        # docker up + migrate deploy + seed
+npm run db:up        # start Postgres
+npm run db:down      # stop Postgres
+npm run db:migrate   # prisma migrate dev
+npm run db:seed      # sample content + bootstrap admin if needed
+npm run db:studio    # Prisma Studio
+npm run dev          # Next.js dev server
+npm run build        # production build
+```
+
+## Customize
+
+1. Admin → **Settings**: publisher name, public URL, OG image, syndication footer
+2. Admin → **Usuários**: invite editors/admins
+3. Replace sample posts / authors / categories
+4. Update `PUBLIC_URL` for the environment you deploy to
+
+## Project layout
+
+```text
+src/app/blog          Public SSR routes
+src/app/admin         Admin CMS (React + shadcn)
+src/lib/auth.ts       Sessions, passwords, reset tokens
+src/lib/email.ts      Resend delivery
+src/lib/blog          Domain + HTML renderers
+prisma/               Schema, migrations, seed
+docker-compose.yml    Local Postgres
+```
+
+## License
+
+MIT

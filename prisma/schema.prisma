@@ -1,0 +1,167 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PostStatus {
+  draft
+  scheduled
+  published
+}
+
+enum AuthorRole {
+  author
+  coauthor
+}
+
+enum UserRole {
+  admin
+  editor
+}
+
+model User {
+  id           String    @id @default(uuid())
+  email        String    @unique
+  name         String
+  passwordHash String    @map("password_hash")
+  role         UserRole  @default(editor)
+  createdAt    DateTime  @default(now()) @map("created_at")
+  updatedAt    DateTime  @updatedAt @map("updated_at")
+
+  resetTokens PasswordResetToken[]
+
+  @@map("users")
+}
+
+model PasswordResetToken {
+  id        String    @id @default(uuid())
+  userId    String    @map("user_id")
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at")
+  usedAt    DateTime? @map("used_at")
+  createdAt DateTime  @default(now()) @map("created_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("password_reset_tokens")
+}
+
+model BlogSettings {
+  id                   Int      @id @default(1)
+  publisherName        String   @default("SSR Blog Kit") @map("publisher_name")
+  defaultAuthorName    String   @default("Luiz Filipe Schaeffer") @map("default_author_name")
+  defaultAuthorUserId  String?  @map("default_author_user_id")
+  defaultOgImageUrl    String   @default("") @map("default_og_image_url")
+  syndicationFooter    String   @default("") @map("syndication_footer") @db.Text
+  publicBaseUrl        String   @default("") @map("public_base_url")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  @@map("blog_settings")
+}
+
+model BlogCategory {
+  id              String   @id @default(uuid())
+  name            String
+  slug            String   @unique
+  sortOrder       Int      @default(0) @map("sort_order")
+  published       Boolean  @default(true)
+  defaultCoverUrl String   @default("") @map("default_cover_url")
+  createdAt       DateTime @default(now()) @map("created_at")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  posts     BlogPost[]
+  templates BlogTemplate[]
+
+  @@map("blog_categories")
+}
+
+model BlogTemplate {
+  id                   String   @id @default(uuid())
+  name                 String
+  slug                 String   @unique
+  description          String   @default("")
+  categoryId           String?  @map("category_id")
+  titlePrefix          String   @default("") @map("title_prefix")
+  excerptHint          String   @default("") @map("excerpt_hint") @db.Text
+  bodySkeleton         String   @default("") @map("body_skeleton") @db.Text
+  metaTitlePattern     String   @default("") @map("meta_title_pattern")
+  metaDescriptionHint  String   @default("") @map("meta_description_hint")
+  defaultCoverUrl      String   @default("") @map("default_cover_url")
+  sortOrder            Int      @default(0) @map("sort_order")
+  active               Boolean  @default(true)
+  createdAt            DateTime @default(now()) @map("created_at")
+  updatedAt            DateTime @updatedAt @map("updated_at")
+
+  category BlogCategory? @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  posts    BlogPost[]
+
+  @@map("blog_templates")
+}
+
+model BlogAuthor {
+  id          String   @id @default(uuid())
+  handle      String   @unique
+  displayName String   @map("display_name")
+  avatarUrl   String   @default("") @map("avatar_url")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  postAuthors BlogPostAuthor[]
+
+  @@map("blog_authors")
+}
+
+model BlogPost {
+  id              String     @id @default(uuid())
+  categoryId      String?    @map("category_id")
+  templateId      String?    @map("template_id")
+  authorUserId    String?    @map("author_user_id")
+  title           String
+  slug            String     @unique
+  excerpt         String     @default("") @db.Text
+  body            String     @default("") @db.Text
+  coverUrl        String     @default("") @map("cover_url")
+  status          PostStatus @default(draft)
+  featured        Boolean    @default(false)
+  metaTitle       String     @default("") @map("meta_title")
+  metaDescription String     @default("") @map("meta_description") @db.Text
+  viewCount       Int        @default(0) @map("view_count")
+  publishedAt     DateTime?  @map("published_at")
+  scheduledFor    DateTime?  @map("scheduled_for")
+  createdAt       DateTime   @default(now()) @map("created_at")
+  updatedAt       DateTime   @updatedAt @map("updated_at")
+
+  category BlogCategory?    @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  template BlogTemplate?    @relation(fields: [templateId], references: [id], onDelete: SetNull)
+  authors  BlogPostAuthor[]
+
+  @@index([status, publishedAt(sort: Desc)])
+  @@index([categoryId])
+  @@index([featured])
+  @@index([scheduledFor])
+  @@index([viewCount(sort: Desc)])
+  @@map("blog_posts")
+}
+
+model BlogPostAuthor {
+  id          String     @id @default(uuid())
+  postId      String     @map("post_id")
+  userId      String     @map("user_id")
+  role        AuthorRole
+  handle      String     @default("")
+  displayName String     @default("") @map("display_name")
+  sortOrder   Int        @default(0) @map("sort_order")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  post   BlogPost   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  author BlogAuthor @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@index([postId, sortOrder])
+  @@map("blog_post_authors")
+}
