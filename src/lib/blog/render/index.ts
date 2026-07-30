@@ -68,21 +68,7 @@ export function renderBlogIndex({
     : `<div class="empty">Nenhum artigo publicado ainda.</div>`;
 
   const carousel = featuredPosts.length
-    ? `<section class="featured-section" aria-labelledby="featured-title">
-        <div class="section-heading">
-          <div>
-            <span class="section-kicker">Seleção editorial</span>
-            <h2 id="featured-title">Em destaque</h2>
-          </div>
-          ${
-            featuredPosts.length > 1
-              ? `<div class="carousel-controls" aria-label="Controles do carrossel">
-                  <button type="button" data-carousel-previous aria-label="Post anterior">←</button>
-                  <button type="button" data-carousel-next aria-label="Próximo post">→</button>
-                </div>`
-              : ""
-          }
-        </div>
+    ? `<section class="featured-section" aria-label="Posts em destaque">
         <div class="featured-carousel" data-featured-carousel tabindex="0" aria-label="Posts em destaque">
           ${featuredPosts
             .map((post) => {
@@ -142,17 +128,36 @@ export function renderBlogIndex({
         ? `<script>
           (function () {
             var carousel = document.querySelector('[data-featured-carousel]');
-            var previous = document.querySelector('[data-carousel-previous]');
-            var next = document.querySelector('[data-carousel-next]');
             if (!carousel) return;
-            function move(direction) {
+
+            var interval;
+            function moveNext() {
               var slide = carousel.querySelector('.featured-slide');
               var gap = parseFloat(getComputedStyle(carousel).gap) || 0;
               var distance = slide ? slide.getBoundingClientRect().width + gap : carousel.clientWidth;
-              carousel.scrollBy({ left: direction * distance, behavior: 'smooth' });
+              var atEnd = carousel.scrollLeft + carousel.clientWidth >= carousel.scrollWidth - 2;
+
+              if (atEnd) {
+                carousel.scrollTo({ left: 0, behavior: 'smooth' });
+              } else {
+                carousel.scrollBy({ left: distance, behavior: 'smooth' });
+              }
             }
-            if (previous) previous.addEventListener('click', function () { move(-1); });
-            if (next) next.addEventListener('click', function () { move(1); });
+            function start() {
+              window.clearInterval(interval);
+              interval = window.setInterval(moveNext, 5000);
+            }
+            function stop() {
+              window.clearInterval(interval);
+            }
+
+            carousel.addEventListener('focusin', stop);
+            carousel.addEventListener('focusout', start);
+            document.addEventListener('visibilitychange', function () {
+              if (document.hidden) stop();
+              else start();
+            });
+            start();
           })();
         </script>`
         : undefined,

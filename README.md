@@ -1,5 +1,7 @@
 # SSR Blog Kit
 
+<video src="./doc/blog.mp4" controls width="100%"></video>
+
 Editorial SSR blog starter: public HTML blog + shadcn/ui admin CMS.
 
 Built with **Next.js 16**, **PostgreSQL** (Docker), **Prisma 7**, **marked**, and **lucide-react**.
